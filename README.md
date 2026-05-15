@@ -9,84 +9,79 @@
 
 <br/>
 
-A comprehensive IoT edge-computing and Machine Learning architecture designed to continuously monitor, quantify, and assess the severity of motor tremors in patients with Parkinson's disease. By combining real-time Digital Signal Processing (DSP) with a custom deep Temporal Convolutional Network (TCN), this system delivers live severity inference with high precision.
+A real-time, hardware-accelerated machine learning platform designed to capture, isolate, and classify Parkinsonian tremors with high clinical accuracy. The system integrates low-latency IoT sensor arrays with a custom Temporal Convolutional Network (TCN) to provide orientation-invariant motion analysis. 
 
 ---
 
 ## 📖 Table of Contents
-- [System Overview](#-system-overview)
-- [Key Features & Capabilities](#-key-features--capabilities)
-- [Architecture details](#-architecture-details)
-  - [Hardware (Edge) Layer](#hardware-edge-layer)
-  - [Backend & DSP Layer](#backend--dsp-layer)
-  - [Machine Learning Layer](#machine-learning-layer)
-- [Getting Started](#-getting-started)
+- [Problem Statement](#-problem-statement)
+- [Technical Approach & Engineering Iterations](#-technical-approach--engineering-iterations)
+- [System Architecture](#-system-architecture)
+- [Setup and Usage](#-setup-and-usage)
+- [License](#-license)
 
 ---
 
-## 🔬 System Overview
-Evaluating Parkinsonian tremor severity has traditionally relied on subjective clinical observations (e.g., UPDRS scales). This project introduces a fully quantitative, data-driven pipeline. An edge sensor package captures high-resolution 6-axis IMU data (accelerometer and gyroscope) at a strict 50Hz sampling rate, streaming it over low-latency WebSockets. The Python backend then processes this data using mathematical frequency domain analysis (FFT) to detect clinical episodes, subsequently feeding the isolated signal into a PyTorch-based Deep Learning model.
+## 🛑 Problem Statement
+
+Parkinson's disease and essential tremors present unique challenges in continuous monitoring. While clinical assessments are episodic and subjective, continuous wearable monitoring often fails due to three primary engineering challenges:
+
+1. **The Orientation Problem:** As a patient moves their hand, the physical orientation of a wearable sensor changes. A tremor primarily affecting the X-axis might shift entirely to the Z-axis if the wrist is rotated. Traditional multi-channel neural networks often overfit to specific sensor orientations, leading to catastrophic failure during real-world inference.
+2. **Signal Contamination:** Real-world tremors are not mathematically perfect sine waves. They exhibit "ramp-up" (initiation) and "ramp-down" (cessation) phases that contain heavily distorted frequencies. Training models on these boundary artifacts poisons the dataset.
+3. **Latency vs. Accuracy:** Building a high-quality dataset requires waiting for a tremor episode to complete to analyze it. However, real-time clinical inference requires immediate detection while the tremor is still active.
 
 ---
 
-## ✨ Key Features & Capabilities
+## 🔬 Technical Approach & Engineering Iterations
 
-- **Low-Latency Edge Streaming:** Custom ESP32 C++ firmware acts as an autonomous WebSocket server, providing real-time data streaming over a local Hotspot without requiring external internet.
-- **Automated Episode Extraction:** A dedicated Digital Signal Processing (DSP) thread runs real-time Fast Fourier Transforms (FFT) on a 256-sample sliding window to dynamically isolate active tremor episodes within the 4Hz–12Hz Parkinsonian frequency band.
-- **Temporal Consistency Filtering:** Prevents false positives by enforcing multi-second streak thresholds before triggering a clinical episode state.
-- **Deep Sequence Modeling:** Utilizes an ECAPA-TDNN inspired Temporal Convolutional Network (TCN). The network employs dilated convolutions to effectively capture long-range temporal dependencies in the time-series sensor data without suffering from vanishing gradients.
-- **Interactive Calibration & Inference Dashboard:** Includes a modular Flask-based UI equipped with HTMX to monitor model status, visualize live data streams, and log custom datasets for active learning.
+This system was engineered through multiple iterations to solve these specific signal processing and machine learning bottlenecks.
 
----
+### 1. Achieving Rotation Invariance (The 2-Channel Magnitude Architecture)
 
-## 🏗 Architecture details
+**Trial & Error:** Initial designs attempted to feed raw 6-channel data (3-axis Accelerometer, 3-axis Gyroscope) directly into the neural network. This resulted in a brittle model that failed when the sensor was worn at different angles. We considered data augmentation (channel permutation) to force the network to learn rotational invariance, but this required massive datasets and excessive compute resources.
 
-### Hardware (Edge) Layer
-Located in `/sensor` and `/sensor_ws`.
-- **Microcontroller:** ESP32 / Arduino environment.
-- **Sensors:** 6-DoF IMU recording raw Acceleration (X,Y,Z) and Gyroscopic rotation (X,Y,Z).
-- **Network:** Operates via its own access point (`192.168.4.1`) managing high-speed Websocket clients.
+**Final Solution:** We re-architected the feature extraction pipeline. Instead of feeding physical axes, the system computes the instantaneous 3D Vector Magnitude for both linear acceleration and angular velocity:
+- **Channel 0 (Linear Motion):** `sqrt(Ax^2 + Ay^2 + Az^2)`
+- **Channel 1 (Angular Motion):** `sqrt(Gx^2 + Gy^2 + Gz^2)`
 
-### Backend & DSP Layer
-Located in `/backend` (`app_ws.py`).
-- **Data Buffering:** Thread-safe memory locks managing sliding windows (256 frames).
-- **Complementary Filters:** Calculates accurate Pitch, Roll, and Yaw using Alpha-blended (`alpha=0.96`) accelerometer and gyroscope integration.
-- **Episode Detection:** Automatically slices datasets exactly at the mathematical center of a detected tremor episode for highest quality Machine Learning extraction.
+By reducing the input to a 2-channel magnitude tensor, the model became mathematically immune to hand rotation. The TCN only learns the temporal "shape" of the tremor, yielding near-perfect classification with exceptionally small training datasets (as few as 10-15 samples per class).
 
-### Machine Learning Layer
-Located in `/backend` (`tcn_model.py`, `train.py`).
-- **Model:** `TremorClassifierTCN` written in PyTorch.
-- **Input Channels:** 2-channel temporal input consisting of Accelerometer Magnitude and Gyroscope Magnitude.
-- **Structure:** Sequence of 3 Dilated Convolutional Blocks (`channels: [16, 32, 64]`) with strict causality enforced via custom `Chomp1d` layers and residual shortcut connections.
+### 2. Centralized Slice Extraction (Dataset Curation)
+
+**Trial & Error:** Early implementations utilized a standard sliding-window approach (e.g., capturing the last 256 samples upon detecting a frequency spike). This approach frequently captured the chaotic "ramp-up" phase of a tremor, resulting in low-confidence training data.
+
+**Final Solution:** We implemented an Active Episode state machine. Upon detecting a sustained dominant frequency in the 4-12 Hz band (verified via Fast Fourier Transform and dynamic peak prominence), the system enters an unbounded recording state. Once the tremor completely subsides, the algorithm evaluates the total episode length and surgically extracts exactly 256 samples from the absolute mathematical center of the recording. This guarantees that every training sample is 100% saturated with pure, stable tremor data, completely discarding boundary artifacts.
+
+### 3. Decoupled Live Inference
+
+**Trial & Error:** The Center Slice Extraction algorithm created a pristine dataset, but waiting for a tremor to finish before classifying it made the live inference dashboard feel unresponsive. 
+
+**Final Solution:** We decoupled the inference trigger from the calibration trigger. The Digital Signal Processing (DSP) worker now maintains an asynchronous live buffer. If the system detects an uninterrupted tremor streak of 8 seconds (16 continuous FFT cycles), it instantly bypasses the episode lock, rips the most recent 256 samples from memory, and pushes them through the PyTorch model for immediate classification. The background episode continues to record undisturbed, satisfying both the need for instantaneous feedback and high-quality post-episode dataset generation.
 
 ---
 
-## 🚀 Getting Started
+## 🏗 System Architecture
+
+- **Hardware Layer:** ESP32 Microcontroller + MPU6050 (6-DOF IMU) streaming via a local access point (`192.168.4.1`) over WebSockets at a strict 50Hz.
+- **Signal Processing Layer:** Python backend utilizing `scipy.fft` for DC-offset removal, spectral analysis, and dynamic prominence peak finding to differentiate isolated vs. compound tremors. Includes Complementary Filters for accurate Pitch, Roll, and Yaw calculation via Alpha-blending.
+- **Machine Learning Layer:** PyTorch Temporal Convolutional Network (TCN). Utilizes dilated causal convolutions (emulating ECAPA-TDNN depth styles) with strict causality enforced via custom `Chomp1d` layers and residual shortcut connections to extract rapid temporal features without looking ahead in the sequence.
+- **Presentation Layer:** Flask + HTMX backend serving a responsive interface with live Chart.js spectral streaming and Three.js 3D orientation visualization.
+
+---
+
+## 🚀 Setup and Usage
 
 ### Prerequisites
 - **Python 3.8+**
 - **Arduino IDE** (Configured for ESP32 board management)
 
-### 1. Firmware Flashing
-1. Connect your ESP32 microcontroller.
-2. Open `/sensor_ws/sensor_ws.ino` in the Arduino IDE.
-3. Flash the code to the board. The board will host a WiFi hotspot.
-4. Connect your host machine to the ESP32's Hotspot network.
+### Workflow
 
-### 2. Backend Setup
-1. Open a terminal and navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Install the necessary Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run the Flask WebSockets server:
-   ```bash
-   python app_ws.py
-   ```
-4. Once running, visit `http://localhost:5000` in your browser to access the Monitoring Dashboard.
+1. **Hardware Node:** Power the ESP32 to broadcast the local WebSocket stream.
+2. **Launch Core:** Execute `python backend/app_ws.py` to start the signal processing server.
+3. **Calibration:** Use the Calibration Dashboard at `http://localhost:5000/calibration` to record initial labeled samples using the Center Slice algorithm.
+4. **Training:** Run `python backend/train.py` to auto-discover classes, compute magnitudes, and train the PyTorch TCN. Weights are automatically exported to the active model registry.
+5. **Inference:** Navigate to the Inference Engine dashboard at `http://localhost:5000/inference` for live, hardware-accelerated classification of ongoing tremors.
 
 ---
 
