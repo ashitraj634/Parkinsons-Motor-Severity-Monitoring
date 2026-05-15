@@ -60,6 +60,18 @@ By reducing the input to a 2-channel magnitude tensor, the model became mathemat
 
 ---
 
+## ⌚ Hardware Prototype
+
+Here is the fully functional wearable sensor node built for this project. It features an ESP32 microcontroller, an MPU6050 6-axis IMU, a dedicated power switch, and a compact LiPo battery pack mounted on a standard wristband.
+
+<div align="center">
+  <img src="assets/hardware/esp32_sensor_node_top_view.jpg" width="30%" alt="ESP32 Sensor Node Top View" />
+  <img src="assets/hardware/esp32_sensor_node_side_profile.jpg" width="30%" alt="ESP32 Sensor Node Side Profile" />
+  <img src="assets/hardware/mpu6050_mounting_detail.jpg" width="30%" alt="MPU6050 Mounting Detail" />
+</div>
+
+---
+
 ## 🏗 System Architecture
 
 - **Hardware Layer:** ESP32 Microcontroller + MPU6050 (6-DOF IMU) streaming via a local access point (`192.168.4.1`) over WebSockets at a strict 50Hz.
