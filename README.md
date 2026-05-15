@@ -65,9 +65,15 @@ By reducing the input to a 2-channel magnitude tensor, the model became mathemat
 Here is the fully functional wearable sensor node built for this project. It features an ESP32 microcontroller, an MPU6050 6-axis IMU, a dedicated power switch, and a compact LiPo battery pack mounted on a standard wristband.
 
 <div align="center">
-  <img src="assets/hardware/esp32_sensor_node_top_view.jpg" width="30%" alt="ESP32 Sensor Node Top View" />
-  <img src="assets/hardware/esp32_sensor_node_side_profile.jpg" width="30%" alt="ESP32 Sensor Node Side Profile" />
-  <img src="assets/hardware/mpu6050_mounting_detail.jpg" width="30%" alt="MPU6050 Mounting Detail" />
+  <img src="docs/hardware_setup/sensor_node_top_view.jpg" width="30%" alt="ESP32 Sensor Node Top View" />
+  <img src="docs/hardware_setup/sensor_node_lside_profile.jpg" width="30%" alt="ESP32 Sensor Node Left Side Profile" />
+  <img src="docs/hardware_setup/sensor_node_rside_profile.jpg" width="30%" alt="ESP32 Sensor Node Right Side Profile" />
+</div>
+
+### Circuit Diagram
+
+<div align="center">
+  <img src="docs/circuit_diagram.png" width="70%" alt="Hardware Circuit Schematic" />
 </div>
 
 ---
@@ -94,6 +100,16 @@ Here is the fully functional wearable sensor node built for this project. It fea
 3. **Calibration:** Use the Calibration Dashboard at `http://localhost:5000/calibration` to record initial labeled samples using the Center Slice algorithm.
 4. **Training:** Run `python backend/train.py` to auto-discover classes, compute magnitudes, and train the PyTorch TCN. Weights are automatically exported to the active model registry.
 5. **Inference:** Navigate to the Inference Engine dashboard at `http://localhost:5000/inference` for live, hardware-accelerated classification of ongoing tremors.
+
+---
+
+## 📚 Documentation & Media
+
+- **[Project Report (PDF)](docs/Parkinos-Motor-Monitoring-Report.pdf)**: Comprehensive documentation of the ML model, DSP algorithms, and clinical testing.
+- **[Pitch Presentation (PPTX)](docs/Parkinsons-Tremor-Monitoring-and-Alert-System.pptx)**: High-level overview and slide deck.
+- **Live Demonstrations**:
+  - [Watch Live Demo 1 (MP4)](docs/working_demo/Demo1.mp4)
+  - [Watch Live Demo 2 (MP4)](docs/working_demo/Demo2.mp4)
 
 ---
 
