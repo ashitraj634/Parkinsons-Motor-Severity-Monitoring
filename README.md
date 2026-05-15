@@ -13,7 +13,7 @@ A real-time, hardware-accelerated machine learning platform designed to capture,
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 - [Problem Statement](#-problem-statement)
 - [Technical Approach & Engineering Iterations](#-technical-approach--engineering-iterations)
 - [System Architecture](#-system-architecture)
@@ -22,7 +22,7 @@ A real-time, hardware-accelerated machine learning platform designed to capture,
 
 ---
 
-## 🛑 Problem Statement
+## Problem Statement
 
 Parkinson's disease and essential tremors present unique challenges in continuous monitoring. While clinical assessments are episodic and subjective, continuous wearable monitoring often fails due to three primary engineering challenges:
 
@@ -32,7 +32,7 @@ Parkinson's disease and essential tremors present unique challenges in continuou
 
 ---
 
-## 🔬 Technical Approach & Engineering Iterations
+## Technical Approach & Engineering Iterations
 
 This system was engineered through multiple iterations to solve these specific signal processing and machine learning bottlenecks.
 
@@ -60,7 +60,7 @@ By reducing the input to a 2-channel magnitude tensor, the model became mathemat
 
 ---
 
-## ⌚ Hardware Prototype
+## Hardware Prototype
 
 Here is the fully functional wearable sensor node built for this project. It features an ESP32 microcontroller, an MPU6050 6-axis IMU, a dedicated power switch, and a compact LiPo battery pack mounted on a standard wristband.
 
@@ -78,7 +78,7 @@ Here is the fully functional wearable sensor node built for this project. It fea
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 - **Hardware Layer:** ESP32 Microcontroller + MPU6050 (6-DOF IMU) streaming via a local access point (`192.168.4.1`) over WebSockets at a strict 50Hz.
 - **Signal Processing Layer:** Python backend utilizing `scipy.fft` for DC-offset removal, spectral analysis, and dynamic prominence peak finding to differentiate isolated vs. compound tremors. Includes Complementary Filters for accurate Pitch, Roll, and Yaw calculation via Alpha-blending.
@@ -87,7 +87,7 @@ Here is the fully functional wearable sensor node built for this project. It fea
 
 ---
 
-## 🚀 Setup and Usage
+## Setup and Usage
 
 ### Prerequisites
 - **Python 3.8+**
@@ -103,7 +103,7 @@ Here is the fully functional wearable sensor node built for this project. It fea
 
 ---
 
-## 📚 Documentation & Media
+## Documentation & Media
 
 - **[Project Report (PDF)](docs/Parkinos-Motor-Monitoring-Report.pdf)**: Comprehensive documentation of the ML model, DSP algorithms, and clinical testing.
 - **[Pitch Presentation (PPTX)](docs/Parkinsons-Tremor-Monitoring-and-Alert-System.pptx)**: High-level overview and slide deck.
