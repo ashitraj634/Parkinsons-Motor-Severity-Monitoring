@@ -87,6 +87,29 @@ Here is the fully functional wearable sensor node built for this project. It fea
 
 ---
 
+## 📂 Directory Structure
+
+```text
+📦 Parkinsons-Motor-Severity-Monitoring
+ ┣ 📂 backend
+ ┃ ┣ 📂 models           # Saved PyTorch weights and class registries
+ ┃ ┣ 📂 templates        # Flask HTML/HTMX Dashboard UI
+ ┃ ┣ 📜 app_ws.py        # Core WebSocket, FFT, and DSP Server
+ ┃ ┣ 📜 tcn_model.py     # Temporal Convolutional Network architecture
+ ┃ ┗ 📜 train.py         # Automated PyTorch model training script
+ ┣ 📂 docs
+ ┃ ┣ 📂 hardware_setup   # Hardware prototype photos
+ ┃ ┣ 📂 working_demo     # Live demonstration MP4s
+ ┃ ┣ 📜 circuit_diagram.png
+ ┃ ┗ 📜 Parkinos-Motor-Monitoring-Report.pdf
+ ┣ 📂 firebase           # Database / Auth integration code
+ ┣ 📂 sensor             # Legacy Arduino IMU firmware
+ ┣ 📂 sensor_ws          # Primary ESP32 WebSocket firmware
+ ┗ 📜 README.md          # Project documentation
+```
+
+---
+
 ## Setup and Usage
 
 ### Prerequisites
