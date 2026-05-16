@@ -135,7 +135,3 @@ Parkinsons-Motor-Severity-Monitoring/
   - [Watch Live Demo 2 (MP4)](docs/working_demo/Demo2.mp4)
 
 ---
-
-## 📝 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
